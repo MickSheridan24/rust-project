@@ -1,17 +1,17 @@
-use super::card::*;
+use super::card::data::card_register::CardRegister;
 
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
 #[derive(Clone)]
 pub struct Deck {
-    all_cards: Vec<Card>,
-    remaining: Vec<Card>,
-    discarded: Vec<Card>,
+    all_cards: Vec<CardRegister>,
+    remaining: Vec<CardRegister>,
+    discarded: Vec<CardRegister>,
 }
 
 impl Deck {
-    pub fn init(cards: Vec<Card>) -> Deck {
+    pub fn init(cards: Vec<CardRegister>) -> Deck {
         let mut deck = Deck {
             all_cards: cards.clone(),
             remaining: cards.clone(),
@@ -22,14 +22,14 @@ impl Deck {
         deck
     }
 
-    pub fn get_remaining(&self) -> &Vec<Card> {
+    pub fn get_remaining(&self) -> &Vec<CardRegister> {
         &self.remaining
     }
-    pub fn get_discarded(&self) -> &Vec<Card> {
+    pub fn get_discarded(&self) -> &Vec<CardRegister> {
         &self.discarded
     }
 
-    pub fn draw_hand(&mut self, hand_size: usize) -> Vec<Card> {
+    pub fn draw_hand(&mut self, hand_size: usize) -> Vec<CardRegister> {
         let mut hand = vec![];
 
         while hand.len() < hand_size {
@@ -45,11 +45,11 @@ impl Deck {
         hand
     }
 
-    pub fn discard(&mut self, card: Card) {
+    pub fn discard(&mut self, card: CardRegister) {
         self.discarded.push(card.clone());
     }
 
-    pub fn prepend(&mut self, cards: Vec<Card>) {
+    pub fn prepend(&mut self, cards: Vec<CardRegister>) {
         cards.iter().for_each(|f| {
             self.remaining.push(f.clone());
         })
@@ -69,7 +69,7 @@ impl Deck {
         self.remaining.len() > 0
     }
 
-    fn draw(&mut self) -> Option<Card> {
+    fn draw(&mut self) -> Option<CardRegister> {
         self.remaining.pop()
     }
 }
