@@ -1,14 +1,12 @@
+use std::borrow::BorrowMut;
+
 use super::{
-    card::{merc::Merc, structure::Structure, EntityOwner},
-    output::attacks::{announce_attack, announce_result},
+    card::{data::card_register::CardRegister, structure::Structure, EntityOwner},
     piece::MercPiece,
 };
-use bevy::reflect::erased_serde::__private::serde::__private::de;
 use hashbrown::HashMap;
-use std::{
-    borrow::{Borrow, BorrowMut},
-    cell::RefCell,
-};
+
+pub mod merc_control;
 
 pub struct Board {
     pub max_key: i32,
@@ -41,72 +39,6 @@ impl Board {
 
         board
     }
-    pub fn deploy_merc(&mut self, merc: Merc, owner: EntityOwner) {
-        let space = match owner {
-            EntityOwner::Player => self.player_start,
-            EntityOwner::Opponent => self.opponent_start,
-            EntityOwner::None => -1,
-        };
-        let mut piece = MercPiece::from_card(merc, owner, space);
-        Self::deploy_or_oust(RefCell::new(&mut self.space_data), &mut piece, space);
-    }
-
-    pub fn deploy_or_oust(
-        sdata: RefCell<&mut HashMap<i32, SpaceData>>,
-        piece: &mut MercPiece,
-        space: i32,
-    ) {
-        let next_space = match piece.owner {
-            EntityOwner::Player => space + 1,
-            EntityOwner::Opponent => space - 1,
-            EntityOwner::None => panic!("piece has no owner"),
-        };
-
-        let mut ex: Option<MercPiece> = None;
-
-        if let Some(data) = sdata.borrow_mut().get_mut(&space) {
-            if let Some(existing) = data.get_merc() {
-                if existing.owner == piece.owner {
-                    ex = Some(*existing);
-                    data.set_merc(None);
-                    data.set_merc(Some(*piece));
-                    data.owner = piece.owner;
-                } else {
-                    let res = Board::try_attack(piece, existing);
-                    announce_result(&res);
-                    if res != AttackResult::Victory {
-                        println!("Attacker is unable to disengage and is destroyed!");
-                    }
-                }
-            } else {
-                data.set_merc(Some(*piece));
-                data.owner = piece.owner;
-            }
-        }
-        if let Some(existing) = ex.as_mut() {
-            Board::deploy_or_oust(sdata, existing, next_space);
-        }
-    }
-
-    fn try_attack(attacker: &mut MercPiece, defender: &mut MercPiece) -> AttackResult {
-        announce_attack(&attacker, &defender);
-
-        if (attacker.strength >= defender.health) && (defender.strength < attacker.health) {
-            AttackResult::Victory
-        } else if (attacker.strength >= defender.health) && (defender.strength >= attacker.health) {
-            attacker.health -= 1;
-            defender.health -= 2;
-            AttackResult::Assault
-        } else if (attacker.strength < defender.health) && (defender.strength < attacker.health) {
-            attacker.health -= 1;
-            defender.health -= 1;
-            AttackResult::Skirmish
-        } else if attacker.morale > 5 {
-            AttackResult::FoolsCharge
-        } else {
-            AttackResult::Panic
-        }
-    }
 
     fn insert_connected(&mut self, f: i32, to: i32) {
         if (f > self.max_key) || (to > self.max_key) {
@@ -121,6 +53,17 @@ impl Board {
             .entry(to)
             .and_modify(|v| v.push(SpaceConnection::create(to, f)))
             .or_insert(vec![SpaceConnection::create(to, f)]);
+    }
+
+    fn find_merc_space(&mut self, r: CardRegister) -> Option<&mut SpaceData> {
+        for (k, v) in &mut self.space_data {
+            if let Some(merc) = v.merc {
+                if merc.register == r {
+                    return Some(v);
+                }
+            }
+        }
+        None
     }
 }
 
@@ -155,15 +98,6 @@ impl SpaceData {
 
         self.merc = m;
     }
-}
-
-#[derive(PartialEq, Eq)]
-pub enum AttackResult {
-    Victory,
-    Assault,
-    Skirmish,
-    Panic,
-    FoolsCharge,
 }
 
 pub struct SpaceConnection {

@@ -7,7 +7,6 @@ pub struct Merc {
     pub health: &'static i32,
     pub strength: &'static i32,
     pub name: &'static str,
-    pub register: &'static CardRegister,
 }
 
 pub const merry_landsknechts: Merc = Merc {
@@ -16,7 +15,6 @@ pub const merry_landsknechts: Merc = Merc {
     health: &6,
     strength: &4,
     name: "The Merry Landsknechts",
-    register: &CardRegister::MerryLandsknechts,
 };
 //     BlackRiders,
 
@@ -26,7 +24,6 @@ pub const pavisiers_of_some_renown: Merc = Merc {
     health: &4,
     strength: &7,
     name: "Pavisiers of Some Renown",
-    register: &CardRegister::PavisiersOfSomeRenown,
 };
 
 pub const sixty_seven_horsemen: Merc = Merc {
@@ -35,7 +32,6 @@ pub const sixty_seven_horsemen: Merc = Merc {
     health: &7,
     strength: &6,
     name: "Sixty-Seven Horsemen",
-    register: &CardRegister::SixtySevenHorsemen,
 };
 
 pub const bloody_buccaneers: Merc = Merc {
@@ -44,7 +40,6 @@ pub const bloody_buccaneers: Merc = Merc {
     health: &4,
     strength: &4,
     name: "The Bloody Buccaneers",
-    register: &CardRegister::BloodyBuccaneers,
 };
 
 pub const hill_folk: Merc = Merc {
@@ -53,7 +48,6 @@ pub const hill_folk: Merc = Merc {
     health: &3,
     strength: &2,
     name: "Hill Folk",
-    register: &CardRegister::HillFolk,
 };
 
 pub const black_riders: Merc = Merc {
@@ -62,5 +56,4 @@ pub const black_riders: Merc = Merc {
     health: &7,
     strength: &7,
     name: "Black Riders",
-    register: &CardRegister::BlackRiders,
 };

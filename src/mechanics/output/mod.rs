@@ -3,16 +3,18 @@ use std::io::{self, BufRead};
 
 pub mod attacks;
 pub mod board;
-use crate::mechanics::card::data::card_data::all_cards;
 
-use super::bank::Bank;
+use super::bank::merc_register::MercRegister;
+use super::bank::{merc_register, Bank};
+use super::card::data::card_register::CardRegister;
+use super::card::EntityOwner;
 use super::{card::Card, deck::Deck};
 
-pub fn print_hand(hand: &Vec<Card>) {
+pub fn print_hand(hand: &Vec<CardRegister>) {
     println!("\nYour Hand: ");
     hand.iter()
         .enumerate()
-        .for_each(|(i, f)| println!("{}: {}", i, f.get_name()));
+        .for_each(|(i, f)| println!("{}: {}", i, f.get_card().get_name()));
 }
 
 pub fn prompt_continue() {
@@ -55,13 +57,15 @@ pub fn player_play_card(card: &Card) {
     println!("\n You played {}", card.get_name())
 }
 
-pub fn player_discard_hand(cards: &Vec<Card>) {
+pub fn player_discard_hand(cards: &Vec<CardRegister>) {
     println!("\n You discarded: ");
-    cards.iter().for_each(|f| println!("{}", f.get_name()));
+    cards
+        .iter()
+        .for_each(|f| println!("{}", f.get_card().get_name()));
 }
 
-pub fn opponent_play_card(card: &Card) {
-    println!("\n Opponent played {}", card.get_name());
+pub fn opponent_play_card(card: &CardRegister) {
+    println!("\n Opponent played {}", card.get_card().get_name());
 }
 
 pub fn deck_stats(deck: &Deck) {
@@ -69,38 +73,35 @@ pub fn deck_stats(deck: &Deck) {
     println!("Discarded: {}", deck.get_discarded().len());
 }
 
-pub fn bank_stats(bank: &mut Bank) {
+pub fn bank_stats(bank: &mut Bank, merc_register: &MercRegister) {
     println!("\n\nBank Stats:");
     println!("Mercs:");
-    let cards = all_cards();
 
     for (key, val) in &bank.mercs {
-        let r = cards.get(&key);
-        if let Some(r) = r {
-            println!("  {}: {}", r.get_name(), val)
-        }
+        let r = key.get_card();
+        let m = merc_register.get_registry(key);
+        println!("  {} ({}): {}", r.get_name(), get_owner_name(*m), val)
     }
     println!("Exports:");
     for (key, val) in &bank.exports {
-        let r = cards.get(&key);
-        if let Some(r) = r {
-            println!("  {}: {}", r.get_name(), val)
-        }
+        println!("  {}: {}", key.get_card().get_name(), val)
     }
 
     println!("Agents:");
     for (key, val) in &bank.agents {
-        let r = cards.get(&key);
-        if let Some(r) = r {
-            println!("  {}: {}", r.get_name(), val)
-        }
+        println!("  {}: {}", key.get_card().get_name(), val)
     }
 
     println!("Spells:");
     for (key, val) in &bank.spells {
-        let r = cards.get(&key);
-        if let Some(r) = r {
-            println!("  {}: {}", r.get_name(), val)
-        }
+        println!("  {}: {}", key.get_card().get_name(), val)
+    }
+}
+
+pub fn get_owner_name(o: EntityOwner) -> &'static str {
+    match o {
+        EntityOwner::Player => "Player",
+        EntityOwner::Opponent => "Opponent",
+        EntityOwner::None => "Nobody",
     }
 }

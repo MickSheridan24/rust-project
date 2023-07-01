@@ -1,6 +1,12 @@
-use crate::mechanics::{bank, output::board::print_board};
+use crate::mechanics::output::board::print_board;
 
-use super::{bank::Bank, board::Board, card::*, deck::Deck, output::*};
+use super::{
+    bank::{merc_register::MercRegister, Bank},
+    board::Board,
+    card::{data::card_register::CardRegister, *},
+    deck::Deck,
+    output::*,
+};
 use rand::Rng;
 pub struct Game {
     pub player_bank: Bank,
@@ -15,6 +21,8 @@ pub struct Game {
     pub player_start: bool,
 
     pub board: Board,
+
+    pub merc_register: MercRegister,
 }
 
 impl Game {
@@ -28,6 +36,7 @@ impl Game {
             player_bank: Bank::init(EntityOwner::Player),
             opponent_bank: Bank::init(EntityOwner::Opponent),
             board: Board::init_straight(),
+            merc_register: MercRegister::new(),
         }
     }
 
@@ -58,7 +67,7 @@ impl Game {
     fn player_turn(&mut self) {
         println!("Player's Turn");
         deck_stats(&self.player_deck);
-        bank_stats(&mut self.player_bank);
+        bank_stats(&mut self.player_bank, &self.merc_register);
         print_board(&mut self.board);
         let mut player_hand = self.player_deck.draw_hand(6);
 
@@ -66,8 +75,14 @@ impl Game {
             print_hand(&player_hand);
             let entry = prompt_hand(player_hand.len());
             let card = &player_hand[entry];
-            player_play_card(card);
-            card.play(&mut self.player_bank, &mut self.board);
+            player_play_card(&card.get_card());
+            card.play(
+                &EntityOwner::Player,
+                &mut self.player_bank,
+                &self.opponent_bank,
+                &mut self.board,
+                &mut self.merc_register,
+            );
             self.discard(card.clone());
 
             player_hand.remove(entry);
@@ -80,7 +95,8 @@ impl Game {
     fn opponent_turn(&mut self) {
         println!("Opponent's Turn");
         deck_stats(&self.opponent_deck);
-        bank_stats(&mut self.opponent_bank);
+        bank_stats(&mut self.opponent_bank, &self.merc_register);
+        print_board(&mut self.board);
         let mut opp_hand = self.opponent_deck.draw_hand(6);
         let mut rng = rand::thread_rng();
         for _ in 0..3 {
@@ -88,7 +104,13 @@ impl Game {
             let card = &opp_hand[entry];
 
             opponent_play_card(card);
-            card.play(&mut self.opponent_bank, &mut self.board);
+            card.play(
+                &EntityOwner::Opponent,
+                &mut self.opponent_bank,
+                &self.player_bank,
+                &mut self.board,
+                &mut self.merc_register,
+            );
 
             self.discard(card.clone());
             opp_hand.remove(entry);
@@ -97,8 +119,8 @@ impl Game {
         prompt_continue();
     }
 
-    fn discard(&mut self, card: Card) {
-        match card.get_card_owner() {
+    fn discard(&mut self, card: CardRegister) {
+        match card.get_card().get_card_owner() {
             EntityOwner::Player => self.player_deck.discard(card.clone()),
             EntityOwner::Opponent => self.opponent_deck.discard(card.clone()),
             EntityOwner::None => (),

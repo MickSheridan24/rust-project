@@ -1,5 +1,6 @@
-use crate::mechanics::board::AttackResult;
+use crate::mechanics::board::merc_control::AttackResult;
 use crate::mechanics::card::EntityOwner;
+use crate::mechanics::output::get_owner_name;
 use crate::mechanics::piece::MercPiece;
 
 use super::prompt_continue;
@@ -29,4 +30,12 @@ pub fn announce_result(r: &AttackResult) {
         AttackResult::FoolsCharge => println!("\nThe Aggressor Charges into Utter Doom!\n"),
     };
     prompt_continue();
+}
+
+pub fn announce_betrayal(m: &MercPiece, o: EntityOwner) {
+    println!("{} has defected to {}!", m.name, get_owner_name(o))
+}
+
+pub fn announce_deployment(m: &MercPiece, o: EntityOwner) {
+    println!("{} has deployed {}!", get_owner_name(o), m.name)
 }

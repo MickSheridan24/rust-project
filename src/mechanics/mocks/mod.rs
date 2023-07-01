@@ -1,62 +1,54 @@
-use super::card::data::card_data::all_cards;
 use super::card::data::card_register::CardRegister;
-use super::card::*;
+use super::card::data::card_register::CardRegister::*;
+use super::card::EntityOwner::*;
 use super::deck::*;
 
-fn add_card(v: &mut Vec<Card>, r: &CardRegister, x: i8, o: EntityOwner) {
+fn copies(r: &CardRegister, x: i8) -> Vec<CardRegister> {
+    let mut v = vec![];
     for _ in 0..x {
-        let mut c = all_cards()[r].clone();
-        c.set_card_owner(o);
-        v.push(c);
+        v.push(r.clone());
     }
-}
-
-fn add_player_card(v: &mut Vec<Card>, r: &CardRegister, x: i8) {
-    add_card(v, r, x, EntityOwner::Player)
-}
-
-fn add_opp_card(v: &mut Vec<Card>, r: &CardRegister, x: i8) {
-    add_card(v, r, x, EntityOwner::Opponent)
+    v
 }
 
 pub fn player_deck() -> Deck {
-    let mut cards: Vec<Card> = vec![];
+    let mut cards: Vec<CardRegister> = vec![];
 
-    add_player_card(&mut cards, &CardRegister::MerryLandsknechts, 20);
-    add_player_card(&mut cards, &CardRegister::PavisiersOfSomeRenown, 20);
-    // add_player_card(&mut cards, &CardRegister::HillFort, 5);
-    // add_player_card(&mut cards, &CardRegister::Roadwork, 2);
-    // add_player_card(&mut cards, &CardRegister::DestroyPath, 1);
-    // add_player_card(&mut cards, &CardRegister::Wool, 3);
-    // add_player_card(&mut cards, &CardRegister::Silk, 3);
-    // add_player_card(&mut cards, &CardRegister::Spices, 3);
-    // add_player_card(&mut cards, &CardRegister::Saboteur, 2);
-    // add_player_card(&mut cards, &CardRegister::Cleric, 2);
-    // add_player_card(&mut cards, &CardRegister::CounterSpell, 3);
-    // add_player_card(&mut cards, &CardRegister::ImportedArquebuses, 1);
-    // add_player_card(&mut cards, &CardRegister::PackHorses, 3);
-    // add_player_card(&mut cards, &CardRegister::BallistaTurret, 3);
+    cards.append(&mut copies(&HillFolk(Opponent), 20));
+    cards.append(&mut copies(&PavisiersOfSomeRenown(Player), 20));
+    // cards.append(&mut copies( &HillFort, 5));
+    // cards.append(&mut copies( &Roadwork, 2));
+    // cards.append(&mut copies( &DestroyPath, 1));
+    // cards.append(&mut copies( &Wool, 3));
+    // cards.append(&mut copies( &Silk, 3));
+    // cards.append(&mut copies( &Spices, 3));
+    // cards.append(&mut copies( &Saboteur, 2));
+    // cards.append(&mut copies( &Cleric, 2));
+    // cards.append(&mut copies( &CounterSpell, 3));
+    // cards.append(&mut copies( &ImportedArquebuses, 1));
+    // cards.append(&mut copies( &PackHorses, 3));
+    // cards.append(&mut copies( &BallistaTurret, 3));
 
     Deck::init(cards)
 }
 
 pub fn opponent_deck() -> Deck {
-    let mut cards: Vec<Card> = vec![];
+    let mut cards: Vec<CardRegister> = vec![];
 
-    add_opp_card(&mut cards, &CardRegister::HillFolk, 20);
-    add_opp_card(&mut cards, &CardRegister::SixtySevenHorsemen, 20);
-    // add_opp_card(&mut cards, &CardRegister::Keep, 5);
-    // add_opp_card(&mut cards, &CardRegister::Roadwork, 2);
-    // add_opp_card(&mut cards, &CardRegister::DestroyPath, 1);
-    // add_opp_card(&mut cards, &CardRegister::Wool, 3);
-    // add_opp_card(&mut cards, &CardRegister::Tulips, 3);
-    // add_opp_card(&mut cards, &CardRegister::Timber, 3);
-    // add_opp_card(&mut cards, &CardRegister::Assassin, 2);
-    // add_opp_card(&mut cards, &CardRegister::Scout, 2);
-    // add_opp_card(&mut cards, &CardRegister::CounterSpell, 3);
-    // add_opp_card(&mut cards, &CardRegister::SeigeEngineers, 1);
-    // add_opp_card(&mut cards, &CardRegister::SecretExit, 3);
-    // add_opp_card(&mut cards, &CardRegister::PackHorses, 3);
+    cards.append(&mut copies(&HillFolk(Opponent), 20));
+    cards.append(&mut copies(&SixtySevenHorsemen(Opponent), 20));
+    // cards.append(&mut copies( &Keep, 5));
+    // cards.append(&mut copies( &Roadwork, 2));
+    // cards.append(&mut copies( &DestroyPath, 1));
+    // cards.append(&mut copies( &Wool, 3));
+    // cards.append(&mut copies( &Tulips, 3));
+    // cards.append(&mut copies( &Timber, 3));
+    // cards.append(&mut copies( &Assassin, 2));
+    // cards.append(&mut copies( &Scout, 2));
+    // cards.append(&mut copies( &CounterSpell, 3));
+    // cards.append(&mut copies( &SeigeEngineers, 1));
+    // cards.append(&mut copies( &SecretExit, 3));
+    // cards.append(&mut copies( &PackHorses, 3));
 
     Deck::init(cards)
 }
