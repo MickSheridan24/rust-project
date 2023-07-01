@@ -1,4 +1,4 @@
-use crate::mechanics::board::merc_control::AttackResult;
+use crate::mechanics::board::battle_control::AttackResult;
 use crate::mechanics::card::EntityOwner;
 use crate::mechanics::output::get_owner_name;
 use crate::mechanics::piece::MercPiece;

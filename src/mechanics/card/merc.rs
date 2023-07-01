@@ -1,5 +1,3 @@
-use super::data::card_register::*;
-
 #[derive(Clone, Copy)]
 pub struct Merc {
     pub cost: &'static i32,

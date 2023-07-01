@@ -6,12 +6,15 @@ use super::{
 };
 use hashbrown::HashMap;
 
+pub mod battle_control;
 pub mod merc_control;
 
 pub struct Board {
     pub max_key: i32,
     pub connections: HashMap<i32, Vec<SpaceConnection>>,
-    pub space_data: HashMap<i32, SpaceData>,
+    pub mercs: HashMap<i32, MercPiece>,
+    pub structures: HashMap<i32, Structure>,
+    pub ownership: HashMap<i32, EntityOwner>,
 
     pub player_start: i32,
     pub opponent_start: i32,
@@ -21,10 +24,12 @@ impl Board {
     pub fn init_straight() -> Board {
         let mut board = Board {
             connections: HashMap::new(),
-            space_data: HashMap::new(),
             player_start: 0,
             opponent_start: 5,
             max_key: 5,
+            mercs: HashMap::new(),
+            structures: HashMap::new(),
+            ownership: HashMap::new(),
         };
 
         board.insert_connected(0, 1);
@@ -33,8 +38,10 @@ impl Board {
         board.insert_connected(3, 4);
         board.insert_connected(4, 5);
 
-        for k in 0..6 {
-            board.space_data.insert(k, SpaceData::init());
+        board.ownership.insert(0, EntityOwner::Player);
+        board.ownership.insert(5, EntityOwner::Opponent);
+        for k in 1..5 {
+            board.ownership.insert(k, EntityOwner::None);
         }
 
         board
@@ -53,50 +60,6 @@ impl Board {
             .entry(to)
             .and_modify(|v| v.push(SpaceConnection::create(to, f)))
             .or_insert(vec![SpaceConnection::create(to, f)]);
-    }
-
-    fn find_merc_space(&mut self, r: CardRegister) -> Option<&mut SpaceData> {
-        for (k, v) in &mut self.space_data {
-            if let Some(merc) = v.merc {
-                if merc.register == r {
-                    return Some(v);
-                }
-            }
-        }
-        None
-    }
-}
-
-pub struct SpaceData {
-    pub structure: Option<Structure>,
-    merc: Option<MercPiece>,
-    pub owner: EntityOwner,
-}
-
-impl SpaceData {
-    pub fn init() -> SpaceData {
-        SpaceData {
-            structure: None,
-            merc: None,
-            owner: EntityOwner::None,
-        }
-    }
-
-    pub fn get_merc(&mut self) -> Option<&mut MercPiece> {
-        match self.merc.as_mut() {
-            Some(m) => Some(m),
-            None => None,
-        }
-    }
-    pub fn set_merc(&mut self, m: Option<MercPiece>) {
-        if let Some(mer) = m {
-            if let Some(_) = self.merc {
-                panic!("tried to oust existing merc");
-            }
-            self.owner = mer.owner;
-        }
-
-        self.merc = m;
     }
 }
 

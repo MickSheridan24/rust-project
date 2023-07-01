@@ -90,6 +90,8 @@ impl Game {
         player_discard_hand(&player_hand);
 
         self.opponent_deck.prepend(player_hand);
+
+        self.board.move_pieces(EntityOwner::Player);
     }
 
     fn opponent_turn(&mut self) {
@@ -116,6 +118,7 @@ impl Game {
             opp_hand.remove(entry);
         }
         self.player_deck.prepend(opp_hand);
+        self.board.move_pieces(EntityOwner::Opponent);
         prompt_continue();
     }
 

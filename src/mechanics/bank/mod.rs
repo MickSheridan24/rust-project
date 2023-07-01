@@ -3,7 +3,6 @@ use self::merc_register::MercRegister;
 use super::{
     board::Board,
     card::{CardType::*, EntityOwner::*},
-    output::*,
 };
 use std::collections::HashMap;
 
