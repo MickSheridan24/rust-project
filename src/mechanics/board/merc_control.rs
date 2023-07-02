@@ -1,70 +1,86 @@
-use std::{borrow::BorrowMut, cell::RefCell};
-
-use hashbrown::HashMap;
+use std::borrow::BorrowMut;
 
 use crate::mechanics::{
+    bank::{merc_register::MercRegister, Bank},
+    board::battle_control::InvasionResult,
     card::{
         data::card_register::CardRegister,
         EntityOwner::{self, *},
     },
-    output::attacks::{announce_betrayal, announce_deployment, announce_result},
-    piece::MercPiece,
+    output::attacks::{announce_betrayal, announce_deployment},
+    piece::merc_piece::MercPiece,
 };
 
 use super::{
-    battle_control::{try_attack, AttackResult},
+    battle_control::{handle_invasion, InvasionResult::*},
     Board,
 };
 
 impl Board {
-    pub fn deploy_merc(&mut self, r: CardRegister, owner: EntityOwner) {
+    pub fn deploy_merc(
+        &mut self,
+        r: CardRegister,
+        owner: EntityOwner,
+        player_b: &mut Bank,
+        owner_b: &mut Bank,
+        mr: &mut MercRegister,
+    ) {
         let space = match owner {
             Player => self.player_start,
             Opponent => self.opponent_start,
             None => -1,
         };
-        let mut piece_res = MercPiece::from_card(r, owner, space);
+        let mut piece_res = MercPiece::from_card(r, owner);
         if let Some(piece) = piece_res.borrow_mut() {
             announce_deployment(&piece, owner);
-            self.deploy_or_oust(piece, space);
+            self.deploy_or_oust(piece, space, player_b, owner_b, mr);
         }
     }
 
-    pub fn deploy_or_oust(&mut self, piece: &mut MercPiece, space: i32) {
-        let next_space = match piece.owner {
-            EntityOwner::Player => space + 1,
-            EntityOwner::Opponent => space - 1,
-            EntityOwner::None => panic!("piece has no owner"),
-        };
-
+    pub fn deploy_or_oust(
+        &mut self,
+        piece: &mut MercPiece,
+        space: i32,
+        player_b: &mut Bank,
+        opponent_b: &mut Bank,
+        mr: &mut MercRegister,
+    ) {
         let mut ex: Option<MercPiece> = Option::None;
 
-        if let Some(existing) = self.mercs.get_mut(&space) {
-            if existing.owner == piece.owner {
-                ex = Some(*existing);
-                self.mercs.entry(space).and_modify(|x| *x = *piece);
-            } else {
-                let res = try_attack(piece, existing);
-                announce_result(&res);
-                if res != AttackResult::Victory {
-                    println!("Attacker is unable to disengage and is destroyed!");
+        let existing_op = self.mercs.get_mut(&space);
+        match existing_op {
+            Some(existing) => {
+                if existing.owner == piece.owner {
+                    ex = Some(*existing);
+                    self.mercs.entry(space).and_modify(|x| *x = *piece);
                 } else {
-                    self.mercs
-                        .entry(space)
-                        .and_modify(|x| *x = *piece)
-                        .or_insert(*piece);
-                    self.ownership.entry(space).and_modify(|x| *x = piece.owner);
+                    match handle_invasion(true, piece, existing, player_b, opponent_b, mr) {
+                        RemoveInvader => {}
+                        Success => {
+                            self.mercs.remove(&space);
+                            self.mercs.insert(space, *piece);
+                            self.ownership.entry(space).and_modify(|x| *x = piece.owner);
+                        }
+                        RemoveBoth => {
+                            self.mercs.remove(&space);
+                        }
+                        Stalemate => {}
+                    };
                 }
             }
-        } else {
-            self.mercs
-                .entry(space)
-                .and_modify(|x| *x = *piece)
-                .or_insert(*piece);
-            self.ownership.entry(space).and_modify(|x| *x = piece.owner);
+            Option::None => {
+                self.mercs.insert(space, *piece);
+                self.ownership.entry(space).and_modify(|x| *x = piece.owner);
+            }
         }
+
         if let Some(existing) = ex.as_mut() {
-            self.deploy_or_oust(existing, next_space);
+            let next_space = match piece.owner {
+                EntityOwner::Player => space + 1,
+                EntityOwner::Opponent => space - 1,
+                EntityOwner::None => panic!("piece has no owner"),
+            };
+            self.deploy_or_oust(existing, next_space, player_b, opponent_b, mr);
         }
     }
 
@@ -88,7 +104,13 @@ impl Board {
         }
     }
 
-    pub fn move_pieces(&mut self, o: EntityOwner) {
+    pub fn move_pieces(
+        &mut self,
+        o: EntityOwner,
+        opponent_b: &mut Bank,
+        player_b: &mut Bank,
+        mr: &mut MercRegister,
+    ) {
         let space_ord: Vec<i32> = match o {
             EntityOwner::Player => (0..=self.max_key).rev().collect(),
             EntityOwner::Opponent => (0..=self.max_key).collect(),
@@ -103,42 +125,43 @@ impl Board {
                 let next_merc_op = &mut self.mercs.remove(&next.clone());
 
                 if let Some(curr_merc) = current_merc_op.as_mut() {
-                    if curr_merc.owner == o {
-                        let mut dest_merc = *curr_merc;
-
-                        if let Some(next_merc) = next_merc_op.as_mut() {
-                            if next_merc.owner == o {
-                                self.mercs.insert(*curr, *next_merc);
-                            } else {
-                                let res = try_attack(curr_merc, next_merc);
-                                announce_result(&res);
-                                match res {
-                                    AttackResult::Victory => (),
-                                    AttackResult::FoolsCharge => {
-                                        dest_merc = *next_merc;
-                                    }
-                                    _ => {
-                                        dest_merc = *next_merc;
-                                        self.mercs.insert(*curr, *curr_merc);
-                                    }
+                    if let (Some(next_merc), true) = (next_merc_op.as_mut(), curr_merc.owner == o) {
+                        if next_merc.owner == o {
+                            //Swap
+                            self.mercs.insert(*curr, *next_merc);
+                            self.mercs.insert(*next, *curr_merc);
+                        } else {
+                            //Battle
+                            match handle_invasion(
+                                false, curr_merc, next_merc, player_b, opponent_b, mr,
+                            ) {
+                                InvasionResult::Success => {
+                                    self.mercs.insert(*next, *curr_merc);
+                                    self.ownership.entry(*next).and_modify(|x| *x = o);
                                 }
+                                InvasionResult::Stalemate => {
+                                    self.mercs.insert(*next, *next_merc);
+                                    self.mercs.insert(*curr, *curr_merc);
+                                }
+                                InvasionResult::RemoveInvader => {
+                                    self.mercs.insert(*next, *next_merc);
+                                }
+                                InvasionResult::RemoveBoth => {}
                             }
                         }
-                        println!("DEST MERC {}", dest_merc.name);
-                        self.ownership
-                            .entry(*next)
-                            .and_modify(|x| *x = dest_merc.owner);
-                        self.mercs.insert(*next, dest_merc);
+                    } else if curr_merc.owner == o {
+                        //Advance
+                        self.mercs.insert(*next, *curr_merc);
+                        self.ownership.entry(*next).and_modify(|x| *x = o);
                     } else {
-                        println!("WHOOPS {}, {}", curr_merc.name, curr);
+                        //Stay Put
                         self.mercs.insert(*curr, *curr_merc);
                         if let Some(nm) = next_merc_op {
-                            println!("Wow, clumsy me {}, {}", nm.name, next);
                             self.mercs.insert(*next, *nm);
                         }
                     }
                 } else if let Some(nm) = next_merc_op {
-                    println!("Wow, very clumsy me {}, {}", nm.name, next);
+                    //Put Piece Back
                     self.mercs.insert(*next, *nm);
                 }
             }

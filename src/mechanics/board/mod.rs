@@ -1,19 +1,18 @@
-use std::borrow::BorrowMut;
-
 use super::{
-    card::{data::card_register::CardRegister, structure::Structure, EntityOwner},
-    piece::MercPiece,
+    card::{structure::Structure, EntityOwner},
+    piece::{merc_piece::MercPiece, struct_piece::StructPiece},
 };
 use hashbrown::HashMap;
 
 pub mod battle_control;
 pub mod merc_control;
+pub mod structure_control;
 
 pub struct Board {
     pub max_key: i32,
     pub connections: HashMap<i32, Vec<SpaceConnection>>,
     pub mercs: HashMap<i32, MercPiece>,
-    pub structures: HashMap<i32, Structure>,
+    pub structures: HashMap<i32, StructPiece>,
     pub ownership: HashMap<i32, EntityOwner>,
 
     pub player_start: i32,

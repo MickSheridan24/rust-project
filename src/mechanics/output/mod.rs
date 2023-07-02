@@ -10,11 +10,15 @@ use super::card::data::card_register::CardRegister;
 use super::card::EntityOwner;
 use super::{card::Card, deck::Deck};
 
-pub fn print_hand(hand: &Vec<CardRegister>) {
+pub fn print_hand(hand: &Vec<(CardRegister, bool)>) {
     println!("\nYour Hand: ");
-    hand.iter()
-        .enumerate()
-        .for_each(|(i, f)| println!("{}: {}", i, f.get_card().get_name()));
+    hand.iter().enumerate().for_each(|(i, (f, x))| {
+        println!(
+            "{}: {}",
+            if *x { String::from("X") } else { i.to_string() },
+            f.get_card().get_name()
+        )
+    });
 }
 
 pub fn prompt_continue() {
@@ -27,8 +31,12 @@ pub fn prompt_continue() {
     let _ = handle.read_line(&mut buffer);
 }
 
-pub fn prompt_hand(size: usize) -> usize {
-    let mut ret: Option<usize> = None;
+pub fn prompt_option(options: Vec<i32>) -> i32 {
+    for o in &options {
+        println!("OP {}", o);
+    }
+
+    let mut ret: Option<i32> = None;
     while ret == None {
         println!();
         print!(">>");
@@ -38,11 +46,11 @@ pub fn prompt_hand(size: usize) -> usize {
 
         let _ = handle.read_line(&mut buffer);
 
-        let res = buffer.trim_end().parse();
+        let res: Result<i32, std::num::ParseIntError> = buffer.trim_end().parse();
 
         if let Ok(r) = res {
-            if r < size {
-                ret = Some(r)
+            if options.iter().any(|rr| rr == &r) {
+                ret = Some(r);
             } else {
                 println!("Entry Not A Listed Option");
             }

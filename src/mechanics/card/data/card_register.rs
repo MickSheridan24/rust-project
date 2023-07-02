@@ -55,7 +55,7 @@ impl CardRegister {
         &self,
         player: &EntityOwner,
         bank: &mut Bank,
-        opp_bank: &Bank,
+        opp_bank: &mut Bank,
         board: &mut Board,
         mr: &mut MercRegister,
     ) {
@@ -63,7 +63,7 @@ impl CardRegister {
 
         match card.get_card_type() {
             CardType::MercType(r) => bank.add_merc(*self, player, board, opp_bank, mr),
-            CardType::StructType(_) => (),
+            CardType::StructType(s) => board.handle_construction(self, *player),
             CardType::InfraType(_) => (),
             CardType::ExportType(r) => bank.add_export(*self),
             CardType::EquipmentType(_) => (),

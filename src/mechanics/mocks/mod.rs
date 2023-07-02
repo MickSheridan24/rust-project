@@ -15,8 +15,8 @@ pub fn player_deck() -> Deck {
     let mut cards: Vec<CardRegister> = vec![];
 
     cards.append(&mut copies(&HillFolk(Opponent), 20));
-    cards.append(&mut copies(&PavisiersOfSomeRenown(Player), 20));
-    // cards.append(&mut copies( &HillFort, 5));
+    //cards.append(&mut copies(&PavisiersOfSomeRenown(Player), 20));
+    cards.append(&mut copies(&HillFort(Player), 20));
     // cards.append(&mut copies( &Roadwork, 2));
     // cards.append(&mut copies( &DestroyPath, 1));
     // cards.append(&mut copies( &Wool, 3));
@@ -35,8 +35,7 @@ pub fn player_deck() -> Deck {
 pub fn opponent_deck() -> Deck {
     let mut cards: Vec<CardRegister> = vec![];
 
-    cards.append(&mut copies(&HillFolk(Opponent), 20));
-    cards.append(&mut copies(&SixtySevenHorsemen(Opponent), 20));
+    cards.append(&mut copies(&SixtySevenHorsemen(Opponent), 40));
     // cards.append(&mut copies( &Keep, 5));
     // cards.append(&mut copies( &Roadwork, 2));
     // cards.append(&mut copies( &DestroyPath, 1));

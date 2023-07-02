@@ -34,7 +34,7 @@ impl Bank {
         r: CardRegister,
         player: &EntityOwner,
         board: &mut Board,
-        opp_bank: &Bank,
+        opp_bank: &mut Bank,
         merc_register: &mut MercRegister,
     ) {
         let bank_data = self.mercs.entry(r).and_modify(|x| *x += 1).or_insert(1);
@@ -68,7 +68,7 @@ impl Bank {
                 }
                 None => {
                     if &merc.cost == &bank_data {
-                        board.deploy_merc(r, self.owner);
+                        board.deploy_merc(r, self.owner, self, opp_bank, merc_register);
                         merc_register.add_or_change_registry(r, self.owner);
                     }
                 }
@@ -76,9 +76,8 @@ impl Bank {
         }
     }
 
-    pub fn clear_merc(&mut self, r: CardRegister, merc_register: &mut MercRegister) {
+    pub fn clear_merc(&mut self, r: CardRegister) {
         let x = self.mercs.entry(r).and_modify(|x| *x = 0);
-        merc_register.remove_registry(r);
     }
 
     pub fn add_export(&mut self, r: CardRegister) {

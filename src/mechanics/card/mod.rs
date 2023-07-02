@@ -49,13 +49,6 @@ impl Card {
         self.0
     }
 
-    pub fn merc(&self) -> Option<Merc> {
-        if let CardType::MercType(m) = self.0 {
-            return Some(m);
-        }
-        None
-    }
-
     pub fn get_name(&self) -> &str {
         match self.0 {
             CardType::MercType(m) => m.name,

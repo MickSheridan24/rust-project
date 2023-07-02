@@ -69,29 +69,45 @@ impl Game {
         deck_stats(&self.player_deck);
         bank_stats(&mut self.player_bank, &self.merc_register);
         print_board(&mut self.board);
-        let mut player_hand = self.player_deck.draw_hand(6);
+        let mut player_hand: Vec<(CardRegister, bool)> = self
+            .player_deck
+            .draw_hand(6)
+            .iter()
+            .map(|x| (*x, false))
+            .collect();
 
         for _ in 0..3 {
             print_hand(&player_hand);
-            let entry = prompt_hand(player_hand.len());
-            let card = &player_hand[entry];
-            player_play_card(&card.get_card());
-            card.play(
+
+            let ops: Vec<i32> = (0..player_hand.len())
+                .filter(|f| player_hand.get(*f).is_some() && player_hand.get(*f).unwrap().1)
+                .map(|f| f as i32)
+                .collect();
+
+            let entry = prompt_option(ops);
+            let mut card = &mut player_hand[entry as usize];
+            player_play_card(&card.0.get_card());
+            card.0.play(
                 &EntityOwner::Player,
                 &mut self.player_bank,
-                &self.opponent_bank,
+                &mut self.opponent_bank,
                 &mut self.board,
                 &mut self.merc_register,
             );
-            self.discard(card.clone());
-
-            player_hand.remove(entry);
+            self.discard(card.0.clone());
+            card.1 = true;
         }
-        player_discard_hand(&player_hand);
+        player_discard_hand(&player_hand.iter().map(|x| x.0).collect());
 
-        self.opponent_deck.prepend(player_hand);
+        self.opponent_deck
+            .prepend(player_hand.iter().filter(|x| !x.1).map(|x| x.0).collect());
 
-        self.board.move_pieces(EntityOwner::Player);
+        self.board.move_pieces(
+            EntityOwner::Player,
+            &mut self.player_bank,
+            &mut self.opponent_bank,
+            &mut self.merc_register,
+        );
     }
 
     fn opponent_turn(&mut self) {
@@ -109,7 +125,7 @@ impl Game {
             card.play(
                 &EntityOwner::Opponent,
                 &mut self.opponent_bank,
-                &self.player_bank,
+                &mut self.player_bank,
                 &mut self.board,
                 &mut self.merc_register,
             );
@@ -118,7 +134,12 @@ impl Game {
             opp_hand.remove(entry);
         }
         self.player_deck.prepend(opp_hand);
-        self.board.move_pieces(EntityOwner::Opponent);
+        self.board.move_pieces(
+            EntityOwner::Opponent,
+            &mut self.opponent_bank,
+            &mut self.player_bank,
+            &mut self.merc_register,
+        );
         prompt_continue();
     }
 
